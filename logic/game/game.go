@@ -137,7 +137,7 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 	msgID := pb.ID(msg.GetMessageID())
 
 	switch msgID {
-	case pb.ID_MSG_JoinRoom:
+	case pb.ID_MSG_JoinRoom: //加入房间
 		msg := &pb.S2C_JoinRoomMsg{
 			Roomseatid: proto.Int32(player.idx),
 			RandomSeed: proto.Int32(g.randomSeed),
@@ -150,10 +150,10 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 			msg.Others = append(msg.Others, v.id)
 			msg.Pros = append(msg.Pros, v.loadingProgress)
 		}
-
+		//同步其他人id和进度 自己位置 随机种子
 		player.SendMessage(pb_packet.NewPacket(uint8(pb.ID_MSG_JoinRoom), msg))
 
-	case pb.ID_MSG_Progress:
+	case pb.ID_MSG_Progress: //同步进度信息
 		if g.State > k_Ready {
 			break
 		}
@@ -168,12 +168,15 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 			Id:  proto.Uint64(player.id),
 			Pro: m.Pro,
 		})
+		//广播出去
 		g.broadcastExclude(msg, player.id)
 
-	case pb.ID_MSG_Heartbeat:
+	case pb.ID_MSG_Heartbeat: //心跳
+		//心跳回包
 		player.SendMessage(pb_packet.NewPacket(uint8(pb.ID_MSG_Heartbeat), nil))
+		//刷新心跳时间
 		player.RefreshHeartbeatTime()
-	case pb.ID_MSG_Ready:
+	case pb.ID_MSG_Ready: //准备
 		if k_Ready == g.State {
 			g.doReady(player)
 		} else if k_Gaming == g.State {
@@ -185,12 +188,13 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 			l4g.Error("[game(%d)] ID_MSG_Ready player[%d] state error:[%d]", g.id, player.id, g.State)
 		}
 
-	case pb.ID_MSG_Input:
+	case pb.ID_MSG_Input: //帧同步
 		m := &pb.C2S_InputMsg{}
 		if err := msg.Unmarshal(m); nil != err {
 			l4g.Error("[game(%d)] processMsg player[%d] msg=[%d] UnmarshalPB error:[%s]", g.id, player.id, msg.GetMessageID(), err.Error())
 			return
 		}
+		//入队
 		if !g.pushInput(player, m) {
 			l4g.Warn("[game(%d)] processMsg player[%d] msg=[%d] pushInput failed", g.id, player.id, msg.GetMessageID())
 			break
@@ -198,7 +202,7 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 
 		// 下一帧强制广播(客户端要求)
 		g.dirty = true
-	case pb.ID_MSG_Result:
+	case pb.ID_MSG_Result: //结果
 		m := &pb.C2S_ResultMsg{}
 		if err := msg.Unmarshal(m); nil != err {
 			l4g.Error("[game(%d)] processMsg player[%d] msg=[%d] UnmarshalPB error:[%s]", g.id, player.id, msg.GetMessageID(), err.Error())
@@ -217,9 +221,10 @@ func (g *Game) ProcessMsg(id uint64, msg *pb_packet.Packet) {
 func (g *Game) Tick(now int64) bool {
 
 	switch g.State {
-	case k_Ready:
+	case k_Ready: //准备阶段
 		delta := now - g.startTime
 		if delta < MaxReadyTime {
+			//小于最大等待时间 检测是否都准备好了
 			if g.checkReady() {
 				g.doStart()
 				g.State = k_Gaming
@@ -240,23 +245,26 @@ func (g *Game) Tick(now int64) bool {
 
 		return true
 	case k_Gaming:
+		//检测结束
 		if g.checkOver() {
 			g.State = k_Over
 			l4g.Info("[game(%d)] game over successfully!!", g.id)
 			return true
 		}
-
+		//是否超时
 		if g.isTimeout() {
 			g.State = k_Over
 			l4g.Warn("[game(%d)] game timeout", g.id)
 			return true
 		}
-
+		//逻辑tick
 		g.logic.tick()
+		//广播帧
 		g.broadcastFrameData()
 
 		return true
 	case k_Over:
+		//结束
 		g.doGameOver()
 		g.State = k_Stop
 		l4g.Info("[game(%d)] do game over", g.id)

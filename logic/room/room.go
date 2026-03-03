@@ -35,7 +35,7 @@ type Room struct {
 	secretKey   string
 	logicServer string
 
-	exitChan chan struct{}
+	exitChan chan struct{}//空结构体 占位符
 	msgQ     chan *packet
 	inChan   chan *network.Conn
 	outChan  chan *network.Conn
@@ -123,7 +123,7 @@ func (r *Room) OnGameOver(id uint64) {
 func (r *Room) OnConnect(conn *network.Conn) bool {
 
 	conn.SetCallback(r) // SetCallback只能在OnConnect里调
-	r.inChan <- conn
+	r.inChan <- conn//向chan发送conn
 	l4g.Warn("[room(%d)] OnConnect %d", r.roomID, conn.GetExtraData().(uint64))
 
 	return true
@@ -224,7 +224,7 @@ LOOP:
 	r.game.Close()
 
 	for i := 3; i > 0; i-- {
-		<-time.After(time.Second)
+		<-time.After(time.Second)//等待一秒
 		l4g.Info("[room(%d)] quiting %d...", r.roomID, i)
 	}
 }
