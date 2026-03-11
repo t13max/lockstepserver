@@ -36,7 +36,7 @@ func NewServer(config *Config, callback ConnCallback, protocol Protocol) *Server
 
 type ConnectionCreator func(net.Conn, *Server) *Conn
 
-// Start starts service
+// Start 启动UDP服务
 func (s *Server) Start(listener net.Listener, create ConnectionCreator) {
 	s.listener = listener
 	s.waitGroup.Add(1)
@@ -51,7 +51,7 @@ func (s *Server) Start(listener net.Listener, create ConnectionCreator) {
 
 		default:
 		}
-
+		//等待连接
 		conn, err := listener.Accept()
 		if err != nil {
 			continue
@@ -59,6 +59,7 @@ func (s *Server) Start(listener net.Listener, create ConnectionCreator) {
 
 		s.waitGroup.Add(1)
 		go func() {
+			//新建连接
 			create(conn, s).Do()
 			s.waitGroup.Done()
 		}()

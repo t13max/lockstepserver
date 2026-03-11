@@ -45,10 +45,10 @@ const (
 	colorSymbol = 0x1B
 )
 
-// This is the standard writer that prints to standard output.
+// ConsoleLogWriter This is the standard writer that prints to standard output.
 type ConsoleLogWriter chan *l4g.LogRecord
 
-// This creates a new ConsoleLogWriter
+// NewColorConsoleLogWriter This creates a new ConsoleLogWriter
 func NewColorConsoleLogWriter() ConsoleLogWriter {
 	records := make(ConsoleLogWriter, l4g.LogBufferLength)
 	go records.run(stdout)
@@ -74,7 +74,7 @@ func (w ConsoleLogWriter) run(out io.Writer) {
 	}
 }
 
-// This is the ConsoleLogWriter's output method.  This will block if the output
+// LogWrite This is the ConsoleLogWriter's output method.  This will block if the output
 // buffer is full.
 func (w ConsoleLogWriter) LogWrite(rec *l4g.LogRecord) {
 	w <- rec

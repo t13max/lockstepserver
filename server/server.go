@@ -9,8 +9,8 @@ import (
 
 // LockStepServer 帧同步服务器
 type LockStepServer struct {
-	roomMgr   *logic.RoomManager
-	udpServer *network.Server
+	roomMgr   *logic.RoomManager //房间管理器
+	udpServer *network.Server    //udp服务器
 	totalConn int64
 }
 

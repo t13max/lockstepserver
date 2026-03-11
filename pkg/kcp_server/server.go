@@ -8,6 +8,7 @@ import (
 	"github.com/xtaci/kcp-go"
 )
 
+// ListenAndServe 监听端口并开始提供服务
 func ListenAndServe(addr string, callback network.ConnCallback, protocol network.Protocol) (*network.Server, error) {
 	dupConfig := &network.Config{
 		PacketReceiveChanLimit: 1024,
@@ -22,6 +23,8 @@ func ListenAndServe(addr string, callback network.ConnCallback, protocol network
 	}
 
 	server := network.NewServer(dupConfig, callback, protocol)
+
+	//启动
 	go server.Start(l, func(conn net.Conn, i *network.Server) *network.Conn {
 
 		// 普通模式

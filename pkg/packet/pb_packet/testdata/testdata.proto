@@ -9,7 +9,6 @@ enum ID {
 
     MSG_BEGIN = 0;
 
-
     MSG_Test       = 60;
 
     MSG_END = 255;
